@@ -201,7 +201,13 @@ class Model():
                                                                      super.it//CAM_NUM + 1)
 
         # log pose
+        R = np.array([
+            [0, 0, 1, 0],
+            [-1, 0, 0, 0],
+            [0, -1, 0, 0]
+        ], dtype=np.float32)
         pose = self.pose.SE3()
+        pose = transforms.pose.compose_pair(torch.tensor(R).float().cuda(), pose)
         euler, trans = transforms.get_ang_tra(pose)
         util_vis.tb_log_ang_tra(super.tb_writers[self.model_idx], 
                                 "ext", None, euler, trans,
@@ -297,7 +303,7 @@ class Pose(torch.nn.Module):
         # init euler angles are in degrees, xyz arrangement
         rot = opt.extrinsic[:3] if "extrinsic" in opt else [0, 0, 0] 
         trans = opt.extrinsic[-3:] if "extrinsic" in opt else [0, 0, 0]
-        pose = transforms.pose.invert(transforms.ang_tra_to_SE3(opt, rot, trans))
+        pose = transforms.pose.invert(transforms.ang_tra_to_SE3(opt, rot, trans), use_inverse=True)
         self.init = transforms.lie.SE3_to_se3(pose) #(6)
         
         # --- load the reference extrinsic parameter ----
@@ -310,7 +316,7 @@ class Pose(torch.nn.Module):
             self.ref_ext = transforms.ang_tra_to_SE3(opt, ref[model_idx]["rotation"], ref[model_idx]["translation"])
             # In our reference extrinsic parameters, we use lidar-to-camera transformation. While in this work, we first project camera poses to LiDAR spaces, causing the result extrinsic parameters to be camera-to-lidar transformation. 
             # Thus, we need to inverse it here.
-            self.ref_ext = transforms.pose.invert(self.ref_ext)
+            self.ref_ext = transforms.pose.invert(self.ref_ext, use_inverse=True)
         else:
             self.ref_ext = None
 

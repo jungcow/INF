@@ -6,12 +6,6 @@ import json
 import argparse
 from scipy.spatial.transform import Rotation as R
 
-def invert_transformation(rotation, translation):
-    """Compute the inverse of a transformation matrix."""
-    inv_rotation = rotation.T
-    inv_translation = -np.dot(inv_rotation, translation)
-    return inv_rotation, inv_translation
-
 def load_camera_matrices(input_path):
     """Load camera transformation matrices from a file."""
     camera_matrices = {}
@@ -42,17 +36,24 @@ def main():
     
     ref_ext = []
     for cam, mat in camera_matrices.items():
-        rotation_c2l = mat[:3, :3]
-        translation_c2l = mat[:3, 3]
-        
-        rotation_l2c, translation_l2c = invert_transformation(rotation_c2l, translation_c2l)
-        
-        rot_r = R.from_matrix(rotation_l2c)
-        euler_rotation = rot_r.as_euler('XYZ', degrees=True)
-        ref_ext.append(
-            {"rotation": euler_rotation.tolist(),
-            "translation": translation_l2c.tolist()}
-        )
+        inv_mat = np.linalg.inv(mat)
+        rotation_l2c, translation_l2c = inv_mat[:3, :3], inv_mat[:3, 3]
+
+        # cam_to_INFcam = np.array([
+        #     [0, -1, 0],
+        #     [0, 0, -1],
+        #     [1, 0, 0]
+        # ], dtype=np.float32)
+
+        # cam_to_INFcam = np.linalg.inv(cam_to_INFcam)
+
+        rotation_lidar_to_INFcam, translation_lidar_to_INFcam = rotation_l2c, translation_l2c
+
+        euler_rotation = R.from_matrix(rotation_lidar_to_INFcam).as_euler('xyz', degrees=True)
+        ref_ext.append({
+            "rotation": euler_rotation.tolist(),
+            "translation": translation_lidar_to_INFcam.tolist()
+            })
 
     with open(args.output_path, "w") as f:
         json.dump(ref_ext, f, indent=4)
