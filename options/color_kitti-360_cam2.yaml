@@ -1,0 +1,24 @@
+_parent_: options/bases/base_color.yaml
+
+group: kitti-360_straight
+name: calib_cam2
+density_name: 
+
+render:
+  depth: 30
+  image_size: [700,1400]
+
+data:
+  scene: kitti-360_straight
+  image_sub_folder: image_02
+  sensor: pinhole
+  image_size: [700,1400]
+
+camera: pinhole
+
+extrinsic: [0,0,90,0,0,0]                                    # initial values for extrinsic parameters
+intrinsic: [253.901196, 313.910259, 716.943235, 352.882492]  # [ fx, fy, cx, cy ]
+
+
+train:
+  iteration: 200000                                       # this scene takes longer to converge                                          

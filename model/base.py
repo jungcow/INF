@@ -338,7 +338,7 @@ class Renderer(torch.nn.Module):
     def sample_points(self, opt: edict[str, Any], dirs: torch.Tensor, origins: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         sample points along the ray
-        
+
         Args:
             dirs: shape of (..., 3)
             origins: shape of (..., 3)

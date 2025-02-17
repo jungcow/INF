@@ -1,0 +1,19 @@
+_parent_: options/bases/base_density.yaml
+
+group: kitti-360_straight
+name: density
+
+render:
+  depth: 30
+
+data:
+  scene: kitti-360_straight
+  sensor: ouster                                          # sensor to use (insta or ouster)
+  near_far: [0.5, 30] 
+  length: 74
+
+train:
+  range: 60
+  use_weight: False
+  iteration:
+    all: 40000                                          # iterations to use

@@ -34,19 +34,46 @@ def parse_arguments(args):
     opt_cmd = edict(opt_cmd)
     return opt_cmd
 
+# def set(arg):
+#     opt_cmd = parse_arguments(arg)
+#     log.info("setting configurations...")
+#     assert("model" in opt_cmd)
+#     # load config from yaml file
+#     assert("yaml" in opt_cmd)
+#     fname = "options/{}.yaml".format(opt_cmd.yaml)
+#     opt_base = load_options(fname)
+#     # override with command line arguments
+#     opt = override_options(opt_base,opt_cmd,key_stack=[],safe_check=True)
+#     process_options(opt)
+#     save_options_file(opt)
+#     return opt
+
 def set(arg):
     opt_cmd = parse_arguments(arg)
     log.info("setting configurations...")
-    assert("model" in opt_cmd)
-    # load config from yaml file
-    assert("yaml" in opt_cmd)
-    fname = "options/{}.yaml".format(opt_cmd.yaml)
-    opt_base = load_options(fname)
-    # override with command line arguments
-    opt = override_options(opt_base,opt_cmd,key_stack=[],safe_check=True)
-    process_options(opt)
-    save_options_file(opt)
-    return opt
+    assert "model" in opt_cmd, "The argument '--model' is required."
+    assert "yaml" in opt_cmd, "The argument '--yaml' is required."
+
+    # Support multiple comma-delimited YAML filenames
+    if isinstance(opt_cmd.yaml, str) and "," in opt_cmd.yaml:
+        yaml_list = [item.strip() for item in opt_cmd.yaml.split(",")]
+        print("YAML List: ", yaml_list)
+    else:
+        yaml_list = [opt_cmd.yaml]
+
+    opts_list = []
+    for yml in yaml_list:
+        fname = f"options/{yml}.yaml"
+        opt_base = load_options(fname)
+        # Override with command line arguments
+        # (Could copy opt_cmd if you need to ensure isolation across iterations)
+        opt = override_options(opt_base, opt_cmd, key_stack=[], safe_check=True)
+        process_options(opt)
+        save_options_file(opt)
+        opts_list.append(opt)
+
+    # Return a list of configuration objects when multiple --yaml files are provided.
+    return opts_list
 
 def load_options(fname):
     with open(fname) as file:
@@ -91,17 +118,17 @@ def process_options(opt):
     os.makedirs(opt.output_path,exist_ok=True)
     assert(isinstance(opt.gpu,int)) # disable multi-GPU support for now, single is enough
     opt.device = "cuda:{}".format(opt.gpu)
-    
+            
     # use panorama camera model to render
     opt.render_H, opt.render_W = opt.render.image_size
     opt.render_camera = "panorama"
     opt.render_intr = [opt.render_H, opt.render_W]
 
     # whether there are poses to train
-    opt.poses = opt.model=="color" or opt.train.poses 
+    opt.poses = opt.model=="color" or opt.model=="multicolor" or opt.train.poses 
 
     # set the optioin for calibration
-    if opt.model == "color":
+    if opt.model == "color" or opt.model=="multicolor":
         # for convenience
         opt.H, opt.W = opt.data.image_size
         # load density field settings if train color field

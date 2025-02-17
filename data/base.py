@@ -22,6 +22,8 @@ class DatasetBase(torch.utils.data.Dataset):
         self.opt = opt
         self.target = target
         self.path = os.path.join("data", opt.data.scene)
+        if 'image_sub_folder' in opt.data:
+            self.image_sub_folder = opt.data.image_sub_folder
         self.list = self.get_list()
         self.mask = self.get_mask()
 
@@ -105,7 +107,10 @@ class DatasetRGB(DatasetBase):
         self.cameras = [None] * len(self)
 
     def get_list(self) -> List[int]:
-        all_scans = len(os.listdir(os.path.join(self.path, "images")))
+        if hasattr(self, 'image_sub_folder'):
+            all_scans = len(os.listdir(os.path.join(self.path, "images", self.image_sub_folder)))
+        else:
+            all_scans = len(os.listdir(os.path.join(self.path, "images")))
         # use the same frames that density field used
         self.opt.data.length = min(self.opt.density_opt.data.length, all_scans)
         if self.target == "train":
@@ -161,8 +166,12 @@ class DatasetRGB(DatasetBase):
             torch.Tensor: shape (-1, 3)
         """
         id = self.list[idx]
-        image_folder = os.path.join(self.path, "images")
-        image = self.load_img(os.path.join(image_folder, f"{id:04}.jpg"))
+        if hasattr(self, 'image_sub_folder'):
+            image_folder = os.path.join(self.path, "images", self.image_sub_folder)
+        else:
+            image_folder = os.path.join(self.path, "images")
+        ext = os.listdir(image_folder)[0].split('.')[-1]
+        image = self.load_img(os.path.join(image_folder, f"{id:04}.{ext}"))
         # resize image
         if self.target=="vis":
             image = image.resize((self.opt.render_W, self.opt.render_H))
