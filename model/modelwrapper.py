@@ -87,7 +87,7 @@ class ModelWrapper():
 
         tmp_opt = opt_list[0]
         
-        iter = tmp_opt.train.iteration * len(self.model_list)
+        iter = tmp_opt.train.iteration
         loader = tqdm.trange(self.iter_start, iter, desc="calib", leave=True)
         self.sched_f, self.sched_p = False, False
         
@@ -104,7 +104,6 @@ class ModelWrapper():
             var = var_list[idx]
             opt = opt_list[idx]
             m = self.model_list[idx]
-            breakpoint()
             self.train_iteration(m, opt, var, loader)
 
     def train_iteration(self, model, opt: edict[str, Any], var: edict, loader: tqdm.std.tqdm) -> None:
@@ -143,13 +142,13 @@ class ModelWrapper():
 
         # --- after training iteration ---
         
-        if self.it==0 or (self.it + 1) % opt.freq.scalar == 0: 
+        if (self.it//4)==0 or ((self.it//4) + 1) % opt.freq.scalar == 0: 
             model.log_scalars(self, opt, var.idx) # in child model
-        if self.it==0 or (self.it + 1) % opt.freq.val == 0: 
+        if (self.it//4)==0 or ((self.it//4) + 1) % opt.freq.val == 0: 
             model.validate(self, opt) # in child model
-        if (self.it + 1) % opt.freq.ckpt == 0:
+        if ((self.it//4) + 1) % opt.freq.ckpt == 0:
             model.save_checkpoint(self, opt, status=self.status) # in child model
-        loader.set_postfix(it=self.it,loss=f"{self.loss.all:.3f}")
+        loader.set_postfix(it=(self.it//4),loss=f"{self.loss.all:.3f}")
         self.timer.it_end = time.time()
         update_timer(opt,self.timer,self.ep,len(loader))
 

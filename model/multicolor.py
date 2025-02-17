@@ -57,21 +57,6 @@ class Model():
         if opt.model=="color" or opt.model=="multicolor":
             self.vis_data = data.Dataset(opt,target="vis")
 
-    # def train(self, opt: edict[str, Any]) -> None:
-    #     super().train(opt)
-        
-    #     iter = opt.train.iteration
-    #     loader = tqdm.trange(self.iter_start, iter, desc="calib", leave=True)
-    #     self.sched_f, self.sched_p = False, False
-        
-    #     # get all data
-    #     self.train_data.prefetch_all_data()
-    #     var = self.train_data.all
-
-    #     # train iteration
-    #     for self.it in loader:
-    #         self.train_iteration(opt, var, loader)
-
     def get_rays(self, super, opt: edict[str, Any], var: edict[str, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor, edict[str, torch.Tensor]]:
         
         # --- pre-calculate directions for a image frame ---
@@ -173,16 +158,21 @@ class Model():
         Returns:
             edict[str, torch.Tensor]: depth=tensor with shape [HW]; rgb=tensor with shape [HW, 3] if there is rgb
         """
+        # --- pre-calculate directions for a image frame ---
+        # if not hasattr(self, "train_dirs"):
+        #     self.camera = importlib.import_module(f"camera.{opt.camera}")
+        #     self.train_dirs = util.rays_from_image(opt, opt.W, opt.H, self.camera, self.train_data.intr)
+
         if not hasattr(self, "render_dirs"):
-            camera = importlib.import_module(f"camera.{opt.render_camera}")
-            self.render_dirs = util.rays_from_image(opt, opt.
-            render_W, opt.render_H, camera, opt.render_intr)
+            # camera = importlib.import_module(f"camera.{opt.render_camera}")
+            self.camera = importlib.import_module(f"camera.{opt.camera}")
+            self.render_dirs = util.rays_from_image(opt, opt.W, opt.H, self.camera, self.train_data.intr)
         ret_all = edict(depth=[])
         if opt.model=="color" or opt.model=="multicolor":
             ret_all.update(rgb=[])
         # render the image by slices for memory considerations
-        for c in range(0,opt.render_H * opt.render_W,opt.train.rand_rays):
-            ray_idx = torch.arange(c,min(c+opt.train.rand_rays,opt.render_H * opt.render_W))
+        for c in range(0,opt.H * opt.W,opt.train.rand_rays):
+            ray_idx = torch.arange(c,min(c+opt.train.rand_rays,opt.H * opt.W))
             dirs = self.render_dirs[ray_idx].to(opt.device) # [HW, 3]
             # transform to world spaces
             dirs = dirs @ pose[..., :3].transpose(0, 1) # [HW, 3]
@@ -214,7 +204,7 @@ class Model():
         pose = self.pose.SE3()
         euler, trans = transforms.get_ang_tra(pose)
         util_vis.tb_log_ang_tra(super.tb_writers[self.model_idx], 
-                                "ext", None, euler, trans, 
+                                "ext", None, euler, trans,
                                 super.it//CAM_NUM + 1)
         res = {"rotation": euler, "translation": trans}
         
@@ -246,13 +236,13 @@ class Model():
         """
         checkpoint = dict(
             epoch=super.ep,
-            iter=super.it / CAM_NUM,
+            iter=super.it//CAM_NUM,
             status=status,
             renderer=super.renderer.state_dict(),
         )
         opt.poses and checkpoint.update(pose=self.pose.state_dict())
-        super.it / CAM_NUM>0 and super.field_req and super.sched_f and checkpoint.update(lr_f=super.optim_f.param_groups[0]["lr"])
-        super.it / CAM_NUM>0 and super.pose_req and super.sched_p and checkpoint.update(lr_p=self.optim_p.param_groups[0]["lr"])
+        super.it//CAM_NUM>0 and super.field_req and super.sched_f and checkpoint.update(lr_f=super.optim_f.param_groups[0]["lr"])
+        super.it//CAM_NUM>0 and super.pose_req and super.sched_p and checkpoint.update(lr_p=self.optim_p.param_groups[0]["lr"])
 
         torch.save(checkpoint,f"{opt.output_path}/model.ckpt")
         log.info(f"checkpoint saved: (epoch {super.ep} (iteration {super.it//CAM_NUM})") 
@@ -317,7 +307,7 @@ class Pose(torch.nn.Module):
                 ref = json.load(file)
             # angles are euler angles in xyz order and in degrees
             #! multicolor model expects that ref json has multiple rot & trans transformations
-            self.ref_ext = transforms.ang_tra_to_SE3(opt, ref["rotation"][model_idx], ref["translation"][model_idx])
+            self.ref_ext = transforms.ang_tra_to_SE3(opt, ref[model_idx]["rotation"], ref[model_idx]["translation"])
             # In our reference extrinsic parameters, we use lidar-to-camera transformation. While in this work, we first project camera poses to LiDAR spaces, causing the result extrinsic parameters to be camera-to-lidar transformation. 
             # Thus, we need to inverse it here.
             self.ref_ext = transforms.pose.invert(self.ref_ext)

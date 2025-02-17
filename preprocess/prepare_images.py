@@ -2,7 +2,7 @@ import argparse
 import os
 import glob
 import shutil
-
+from tqdm import tqdm
 
 def main():
     parser = argparse.ArgumentParser(description="Copy and rename images.")
@@ -13,9 +13,9 @@ def main():
     # Define the input pattern to search for image files
     input_pattern = os.path.join(args.input_path, "images", "image_*", "*.png")
 
-    for file_path in glob.glob(input_pattern):
+    for file_path in tqdm(glob.glob(input_pattern)):
         parts = file_path.split(os.sep)
-        
+
         if len(parts) < 4:
             continue
 
@@ -37,7 +37,6 @@ def main():
         
         # Copy the file to the new location with the updated name
         shutil.copy2(file_path, new_path)
-        print(f"Copied: {file_path} -> {new_path}")
 
 
 if __name__ == "__main__":

@@ -34,20 +34,6 @@ def parse_arguments(args):
     opt_cmd = edict(opt_cmd)
     return opt_cmd
 
-# def set(arg):
-#     opt_cmd = parse_arguments(arg)
-#     log.info("setting configurations...")
-#     assert("model" in opt_cmd)
-#     # load config from yaml file
-#     assert("yaml" in opt_cmd)
-#     fname = "options/{}.yaml".format(opt_cmd.yaml)
-#     opt_base = load_options(fname)
-#     # override with command line arguments
-#     opt = override_options(opt_base,opt_cmd,key_stack=[],safe_check=True)
-#     process_options(opt)
-#     save_options_file(opt)
-#     return opt
-
 def set(arg):
     opt_cmd = parse_arguments(arg)
     log.info("setting configurations...")

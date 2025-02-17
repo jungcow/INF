@@ -1,48 +1,46 @@
 import torch
-from typing import List
 
-def cam2img(X_cam: torch.Tensor, cam_intr: torch.Tensor) -> torch.Tensor:
+def cam2img(X: torch.Tensor, cam_intr: torch.Tensor) -> torch.Tensor:
     """
-    Convert 3D camera coordinates to image pixel coordinates.
+    Convert 3D points in camera coordinates to 2D image coordinates using a pinhole model.
 
     Args:
-        X_cam (torch.Tensor): Camera coordinates [N, 3] (X, Y, Z in camera frame).
-        cam_intr (torch.Tensor): Camera intrinsics [4] (f_x, f_y, c_x, c_y).
+        X (torch.Tensor): [..., 3] 3D points in camera coordinates (Z>0 for valid projection).
+        intr (torch.Tensor): [4] = (fx, fy, cx, cy).
 
     Returns:
-        torch.Tensor: Image coordinates [N, 2] (u, v).
+        torch.Tensor: [..., 2] image coordinates in (x, y) format. 
+                      Floating-point for sub-pixel precision.
     """
-    f_x, f_y, c_x, c_y = cam_intr
-    X, Y, Z = X_cam[..., 0], X_cam[..., 1], X_cam[..., 2]
-    
-    # Perspective projection to image coordinates
-    u = f_x * (X / Z) + c_x
-    v = f_y * (Y / Z) + c_y
-    
-    return torch.stack((u, v), dim=-1)  # Shape [N, 2]
+    fx, fy, cx, cy = cam_intr
 
+    # Z must not be zero or negative for valid forward projection
+    z = X[..., 2] + 1e-8
 
-def img2cam(X_img: torch.Tensor, cam_intr: torch.Tensor) -> torch.Tensor:
+    x_img = (X[..., 0] / z) * fx + cx
+    y_img = (X[..., 1] / z) * fy + cy
+    return torch.stack([x_img, y_img], dim=-1)
+
+def img2cam(X: torch.Tensor, cam_intr: torch.Tensor) -> torch.Tensor:
     """
-    Convert image pixel coordinates to camera ray directions.
+    Convert 2D image coordinates to normalized 3D camera-space rays using a pinhole model.
 
     Args:
-        X_img (torch.Tensor): Image coordinates [N, 2] (u, v).
-        cam_intr (torch.Tensor): Camera intrinsics [4] (f_x, f_y, c_x, c_y).
+        uv (torch.Tensor): [..., 2] pixel coordinates in (x, y) format.
+        intr (torch.Tensor): [4] = (fx, fy, cx, cy).
 
     Returns:
-        torch.Tensor: Camera ray directions [N, 3], normalized.
+        torch.Tensor: [..., 3] normalized direction vectors in camera coordinates.
+                      +X is to the right, +Y is down, +Z is forward (commonly used convention).
     """
-    f_x, f_y, c_x, c_y = cam_intr
-    
-    # Compute camera coordinates
-    X_cam = (X_img[..., 0] - c_x) / f_x  # (u - c_x) / f_x
-    Y_cam = (X_img[..., 1] - c_y) / f_y  # (v - c_y) / f_y
-    Z_cam = torch.ones_like(X_cam)  # Set depth to 1
-    
-    directions = torch.stack((X_cam, Y_cam, Z_cam), dim=-1)
-    
-    # Normalize ray directions
-    directions = directions / torch.norm(directions, dim=-1, keepdim=True)
-    
-    return directions  # Shape [N, 3]
+    fx, fy, cx, cy = cam_intr
+
+    x_img = X[..., 0]
+    y_img = X[..., 1]
+
+    # Convert from pixel to normalized camera coordinates
+    x_cam = (x_img - cx) / fx
+    y_cam = (y_img - cy) / fy
+
+    dirs = torch.stack([torch.ones_like(x_cam), -x_cam, -y_cam], dim=-1)
+    return dirs

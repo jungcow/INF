@@ -6,6 +6,8 @@ from tqdm import tqdm
 
 """
 Convert point clouds(.pcd) to scans(.npy)
+- pcds/%06d.pcd -> scans/%04.npy
+- scans: polar coordinate representing the points into ray 
 """
 
 def load_xyz_from_pcd(file_path):

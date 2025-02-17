@@ -14,8 +14,8 @@ data:                                                       # data options
 
 freq:                                                       # periodic actions during training
     scalar: 500                                             # log losses and scalar states (every N iterations)
-    val:  20000                                             # validate on val set (every N epochs)
-    ckpt:  5000                                             # save checkpoint (every N epochs)
+    val:  10000                                             # validate on val set (every N epochs)
+    ckpt:  10000                                             # save checkpoint (every N epochs)
 
 arch:                                                       # achitecture of the MLP
     layers_feat: [null,256,256,256,256,256,256]             # hidden layers for feature/density MLP

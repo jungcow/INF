@@ -14,7 +14,7 @@ data:
 
 train:
   range: 60
-  use_weight: False
+  use_weight: True
   iteration:
     all: 40000                                          # iterations to use
 

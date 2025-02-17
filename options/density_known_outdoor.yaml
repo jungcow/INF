@@ -8,6 +8,7 @@ render:
 
 data:
   scene: outdoor
+  sensor: HDL64E                                          # sensor to use (insta or ouster)
 
 train:
   range: 60

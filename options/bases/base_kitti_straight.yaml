@@ -1,0 +1,28 @@
+_parent_: options/bases/base_color.yaml
+
+group: kitti-360_straight
+name: 
+density_name: 
+
+render:
+  depth: 60
+  image_size:
+
+data:
+  scene: kitti-360_straight
+  image_sub_folder:
+  sensor: pinhole
+  image_size:
+
+camera: pinhole
+
+extrinsic:
+intrinsic:
+
+train:
+  iteration: 200000                                       # this scene takes longer to converge                                          
+
+freq:                                                       # periodic actions during training
+    scalar: 250                                            # log losses and scalar states (every N iterations)
+    val:  2500                                             # validate on val set (every N epochs)
+    ckpt:  5000                                            # save checkpoint (every N epochs)
