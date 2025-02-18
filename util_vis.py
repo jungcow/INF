@@ -75,6 +75,8 @@ def tb_log_ang_tra(
         tb.add_scalar(f"{split}/{t}{title}", euler[n], iter + 1)
     for n, title in enumerate(["x", "y", "z"]):
         tb.add_scalar(f"{split}/{t}{title}", trans[n], iter + 1)
+    tb.add_scalar(f"{split}/rot_norm", np.linalg.norm(euler), iter + 1)
+    tb.add_scalar(f"{split}/trans_norm", np.linalg.norm(trans), iter + 1)
 
 @torch.no_grad()
 def tb_image(opt,tb,step,group,name,images,num_vis=None,from_range=(0,1),cmap="gray"):
