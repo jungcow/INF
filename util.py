@@ -188,3 +188,38 @@ def plot_paths(data: dict[str, torch.Tensor], path: str) -> None:
     axs.legend(handles=legend_elements)
     # plt.rcParams["text.usetex"] = True
     plt.savefig(res_file, format="png", dpi=300, bbox_inches="tight")
+
+import numpy as np
+def make_transformation(R=np.eye(3), t=np.zeros(3), batch=False):
+    if batch:
+        batch_size = len(R)
+        R = np.array(R)
+        t = np.array(t)
+        
+        poses = np.zeros((batch_size, 4, 4))
+        poses[:, :3, :3] = R
+        poses[:, :3, 3] = t.reshape(-1, 3)
+        poses[:, 3, 3] = 1.0
+        return poses
+    else:
+        pose = np.eye(4)
+        pose[:3, :3] = R
+        pose[:3, 3] = t
+        return pose
+
+def make_transformation_cuda(R=torch.eye(3), t=torch.zeros(3), device='cuda', batch=False):
+    if batch:
+        batch_size = len(R)
+        R = torch.tensor(R).to(device)
+        t = torch.tensor(t).to(device)
+        
+        poses = torch.zeros((batch_size, 4, 4), device=device)
+        poses[:, :3, :3] = R
+        poses[:, :3, 3] = t.reshape(-1, 3)
+        poses[:, 3, 3] = 1.0
+        return poses
+    else:
+        pose = torch.eye(4, device=device)
+        pose[:3, :3] = R
+        pose[:3, 3] = t
+        return pose

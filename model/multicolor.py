@@ -1,6 +1,6 @@
 from . import modelwrapper, density, base
 from easydict import EasyDict as edict
-from util import log
+from util import log, make_transformation, make_transformation_cuda
 import torch
 import tqdm
 import util_vis
@@ -201,12 +201,12 @@ class Model():
                                                                      super.it//CAM_NUM + 1)
 
         # log pose
+        pose = self.pose.SE3()
         R = np.array([
             [0, 0, 1, 0],
             [-1, 0, 0, 0],
             [0, -1, 0, 0]
-        ], dtype=np.float32)
-        pose = self.pose.SE3()
+        ], dtype=np.float32) # cam_INF to cam(z-forward, x-right, y-downward)
         pose = transforms.pose.compose_pair(torch.tensor(R).float().cuda(), pose)
         euler, trans = transforms.get_ang_tra(pose)
         util_vis.tb_log_ang_tra(super.tb_writers[self.model_idx], 
@@ -299,15 +299,8 @@ class Pose(torch.nn.Module):
         self.ext = torch.nn.Embedding(1, 6).to(opt.device)
         torch.nn.init.zeros_(self.ext.weight)
 
-        # --- initial value ---
-        # init euler angles are in degrees, xyz arrangement
-        rot = opt.extrinsic[:3] if "extrinsic" in opt else [0, 0, 0] 
-        trans = opt.extrinsic[-3:] if "extrinsic" in opt else [0, 0, 0]
-        pose = transforms.pose.invert(transforms.ang_tra_to_SE3(opt, rot, trans), use_inverse=True)
-        self.init = transforms.lie.SE3_to_se3(pose) #(6)
-        
         # --- load the reference extrinsic parameter ----
-        ref_path = os.path.join("data", opt.data.scene, "ref_ext.json")
+        ref_path = os.path.join("data", opt.data.scene, "ref_ext.json") # L2C
         if os.path.exists(ref_path):
             with open(ref_path, "r") as file:
                 ref = json.load(file)
@@ -316,9 +309,59 @@ class Pose(torch.nn.Module):
             self.ref_ext = transforms.ang_tra_to_SE3(opt, ref[model_idx]["rotation"], ref[model_idx]["translation"])
             # In our reference extrinsic parameters, we use lidar-to-camera transformation. While in this work, we first project camera poses to LiDAR spaces, causing the result extrinsic parameters to be camera-to-lidar transformation. 
             # Thus, we need to inverse it here.
-            self.ref_ext = transforms.pose.invert(self.ref_ext, use_inverse=True)
+            self.ref_ext = transforms.pose.invert(self.ref_ext, use_inverse=True) # C2L
         else:
             self.ref_ext = None
+
+        if 'random_noise' in opt.train:
+            self.random_noise = opt.train.random_noise
+            rot_noise_bound = self.random_noise[0]
+            trans_noise_bound = self.random_noise[1]
+
+            # random sign
+            r_noise = [-1 ** np.random.randint(1, 3) * rot_noise_bound for _ in range(3)]
+            t_noise = [-1 ** np.random.randint(1, 3) * trans_noise_bound for _ in range(3)]
+
+            def make_transform(axis, T, degree):
+                axis = axis / np.linalg.norm(axis)
+                rad = np.radians(degree)
+                c = np.cos(rad)
+                s = np.sin(rad)
+                t = 1 - c
+                x = axis[0]
+                y = axis[1]
+                z = axis[2]
+                
+                return np.array([
+                    [t*x*x + c, t*x*y - s*z, t*x*z + s*y, T[0]],
+                    [t*x*y + s*z, t*y*y + c, t*y*z - s*x, T[1]],
+                    [t*x*z - s*y, t*y*z + s*x, t*z*z + c, T[2]],
+                    [0, 0, 0, 1]
+                ])
+
+            noise_transform = make_transform(axis=np.array([1, 0, 0]), T=t_noise, degree=r_noise[0]) @ \
+                            make_transform(axis=np.array([0, 1, 0]), T=np.zeros(3), degree=r_noise[1]) @ \
+                            make_transform(axis=np.array([0, 0, 1]), T=np.zeros(3), degree=r_noise[2])
+
+            noise = torch.tensor(noise_transform[:3]).float().cuda()
+            pose = transforms.pose.compose_pair(noise, self.ref_ext)
+
+            C2C = np.array([
+                [0, 0, 1, 0],
+                [-1, 0, 0, 0],
+                [0, -1, 0, 0]
+            ], dtype=np.float32) # cam_INF to cam(z-forward, x-right, y-downward)
+            C2C_inv = transforms.pose.invert(torch.tensor(C2C).float().cuda())
+            pose = transforms.pose.compose_pair(torch.tensor(C2C_inv).float().cuda(), pose)
+        else:
+            # --- initial value ---
+            # init euler angles are in degrees, xyz arrangement
+            rot = opt.extrinsic[:3] if "extrinsic" in opt else [0, 0, 0] 
+            trans = opt.extrinsic[-3:] if "extrinsic" in opt else [0, 0, 0]
+            pose = transforms.pose.invert(transforms.ang_tra_to_SE3(opt, rot, trans), use_inverse=True)
+
+        self.init = transforms.lie.SE3_to_se3(pose) #(6)
+
 
     def SE3(self) -> torch.Tensor:
         """
@@ -340,5 +383,5 @@ class Pose(torch.nn.Module):
             torch.Tensor: with shape [..., 3, 4]
         """
         c2l = self.SE3() # [3, 4]
-        new_poses = transforms.pose.compose_pair(c2l, l2w) # l2w @ c2l
+        new_poses = transforms.pose.compose_pair(c2l, l2w) # l2w @ c2l = c2w
         return new_poses
