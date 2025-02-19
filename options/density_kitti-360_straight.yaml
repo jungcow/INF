@@ -17,4 +17,4 @@ train:
   range: 120
   use_weight: True
   iteration:
-    all: 80000                                          # iterations to use
+    all: 40000                                          # iterations to use
