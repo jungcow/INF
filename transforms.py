@@ -162,6 +162,15 @@ class Pose():
         """
         return self.compose_pair(pose_b, self.invert(pose_a))
 
+    def absolute(self, pose_a, pose_b) -> torch.Tensor:
+        """
+        Returns: RMSE (Absolute Trajectory Error)
+        """
+        squared_errors = torch.square(pose_a[:3, 3] - pose_b[:3, 3]).sum(axis=-1)
+        trans_err = torch.sqrt(squared_errors.mean())
+        return trans_err.item()
+
+
 class Lie():
     """
     Lie algebra for SO(3) and SE(3) operations in PyTorch

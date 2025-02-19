@@ -142,10 +142,10 @@ class ModelWrapper():
 
         # --- after training iteration ---
         
-        if (self.it//4)==0 or ((self.it//4) + 1) % opt.freq.scalar == 0: 
-            model.log_scalars(self, opt, var.idx) # in child model
         if (self.it//4)==0 or ((self.it//4) + 1) % opt.freq.val == 0: 
             model.validate(self, opt) # in child model
+        if (self.it//4)==0 or ((self.it//4) + 1) % opt.freq.scalar == 0: 
+            model.log_scalars(self, opt, var.idx) # in child model
         if ((self.it//4) + 1) % opt.freq.ckpt == 0:
             model.save_checkpoint(self, opt, status=self.status) # in child model
         loader.set_postfix(it=(self.it//4),loss=f"{self.loss.all:.3f}")
