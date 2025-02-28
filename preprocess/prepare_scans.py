@@ -38,7 +38,7 @@ def pcd_to_lidarscan(pcd_path):
 
 def main(args):
     pcd_path = args.pcd_path
-    output_path = args.output_path
+    output_path = os.path.join(args.output_path, 'scans')
     os.makedirs(output_path, exist_ok=True)
 
     print(len(os.listdir(pcd_path)))
@@ -55,7 +55,7 @@ def main(args):
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--pcd_path', type=str, required=True, help='Parents directory of .pcd files')
-    parser.add_argument('--output_path', '-o', type=str, required=True, help='Parents directory of output .npy files')
+    parser.add_argument('--output_path', '-o', type=str, required=True, help='Parents directory of scans/%%04d.npy files')
     args = parser.parse_args()
 
     main(args)

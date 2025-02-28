@@ -12,7 +12,7 @@ data:                                                       # data options
 
 freq:                                                       # periodic actions during training
     scalar: 1000                                            # log losses and scalar states (every N iterations)
-    val:  10000                                             # validate on val set (every N epochs)
+    val:  20000                                             # validate on val set (every N epochs)
     ckpt:  10000                                            # save checkpoint (every N epochs)
 
 

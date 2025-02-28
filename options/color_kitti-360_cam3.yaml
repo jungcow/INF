@@ -1,4 +1,4 @@
-_parent_: options/bases/base_kitti_straight.yaml
+_parent_: options/bases/base_color_kitti-360.yaml
 
 name: calib_cam3
 density_name: 

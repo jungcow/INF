@@ -21,7 +21,7 @@ intrinsic:
 
 train:
   iteration: 200000                                       # this scene takes longer to converge                                          
-  random_noise: [5.0, 0.5] # [rot, trans]
+  random_noise: [5.0, 0.5] # [rot, trans] -1 or 1 random multiplier
 
 seed: 
 

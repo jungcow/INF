@@ -118,8 +118,8 @@ class DatasetRGB(DatasetBase):
         elif self.target == "vis":
             # only when calibtration, there is visualization target
             # we just render the first and last frames for your reference
-            return [0, self.opt.data.length-1] # first and last
-            # return np.arange(0, self.opt.data.length, 2)
+            # return [0, self.opt.data.length-1] # first and last
+            return np.arange(0, self.opt.data.length, 8)
 
     def get_mask(self) -> torch.Tensor:
         mask_path = os.path.join(self.path, "camera_mask.png") # mask path is hard-coded here
@@ -143,8 +143,8 @@ class DatasetRGB(DatasetBase):
         path = os.path.join(self.opt.density_opt.output_path, "poses.npy")
         raw_poses = torch.from_numpy(np.load(path))
         if self.target=="vis":
-            raw_poses = raw_poses[[0, -1]] # the first and last frames will be used
-            # raw_poses = raw_poses[np.arange(0, len(raw_poses), 2)] # the first and last frames will be used
+            # raw_poses = raw_poses[[0, -1]] # the first and last frames will be used
+            raw_poses = raw_poses[np.arange(0, len(raw_poses), 8)] # the first and last frames will be used
         return raw_poses
 
     def load_img(self, path:str) -> PIL.Image.Image:

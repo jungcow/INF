@@ -378,14 +378,13 @@ class Pose(torch.nn.Module):
         else:
             self.ref_ext = None
 
-        if 'random_noise' in opt.train:
-            self.random_noise = opt.train.random_noise
-            rot_noise_bound = self.random_noise[0]
-            trans_noise_bound = self.random_noise[1]
+        if 'rot_noise' in opt.train or 'trans_noise' in opt.train:
+            rot_noise_bound = opt.train.rot_noise
+            trans_noise_bound = opt.train.trans_noise
 
             # random sign
-            r_noise = [-1 ** np.random.randint(1, 3) * rot_noise_bound for _ in range(3)]
-            t_noise = [-1 ** np.random.randint(1, 3) * trans_noise_bound for _ in range(3)]
+            r_noise = np.random.uniform(-rot_noise_bound, rot_noise_bound, 3)
+            t_noise = np.random.uniform(-trans_noise_bound, trans_noise_bound, 3)
 
             def make_transform(axis, T, degree):
                 axis = axis / np.linalg.norm(axis)

@@ -5,6 +5,7 @@ import numpy as np
 import json
 import argparse
 from scipy.spatial.transform import Rotation as R
+import os
 
 def load_camera_matrices(input_path):
     """Load camera transformation matrices from a file."""
@@ -55,10 +56,11 @@ def main():
             "translation": translation_lidar_to_INFcam.tolist()
             })
 
-    with open(args.output_path, "w") as f:
+    os.makedirs(args.output_path, exist_ok=True)
+    with open(os.path.join(args.output_path, 'ref_ext.json'), "w") as f:
         json.dump(ref_ext, f, indent=4)
 
-    print(f"Conversion completed. ref_ext.json has been saved at {args.output_path}.")
+    print(f"Conversion completed. ref_ext.json has been saved at {os.path.join(args.output_path, 'ref_ext.json')}.")
 
 if __name__ == "__main__":
     main()

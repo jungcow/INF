@@ -1,6 +1,8 @@
 _parent_: options/bases/base_color.yaml
 
-group: kitti-360_zigzag
+# should specity the ['group', 'scene', 'random_noise'] in command line options
+
+group:
 name: 
 density_name: 
 
@@ -9,7 +11,7 @@ render:
   image_size:
 
 data:
-  scene: kitti-360_zigzag
+  scene:
   image_sub_folder:
   sensor: pinhole
   image_size:
@@ -21,13 +23,14 @@ intrinsic:
 
 train:
   iteration: 200000                                       # this scene takes longer to converge                                          
-  random_noise: [5.0, 0.5] # [rot, trans]
+  # rot_noise: 5.0 # uniform random sampling on [-rot_noise ~ rot_noise]
+  # trans_noise: 0.5 # uniform random sampling on [-trans_noise ~ trans_noise]
 
 seed: 
 
 freq:                                                       # periodic actions during training
     scalar: 250                                            # log losses and scalar states (every N iterations)
-    val:  2500                                             # validate on val set (every N epochs)
+    val:  10000                                             # validate on val set (every N epochs)
     ckpt:  5000                                            # save checkpoint (every N epochs)
 
 lr:
