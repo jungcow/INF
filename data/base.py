@@ -118,8 +118,8 @@ class DatasetRGB(DatasetBase):
         elif self.target == "vis":
             # only when calibtration, there is visualization target
             # we just render the first and last frames for your reference
-            # return [0, self.opt.data.length-1] # first and last
-            return np.arange(0, self.opt.data.length, 8)
+            return [0, self.opt.data.length-1] # first and last
+            # return np.arange(0, self.opt.data.length, 8)
 
     def get_mask(self) -> torch.Tensor:
         mask_path = os.path.join(self.path, "camera_mask.png") # mask path is hard-coded here
@@ -142,9 +142,11 @@ class DatasetRGB(DatasetBase):
         """
         path = os.path.join(self.opt.density_opt.output_path, "poses.npy")
         raw_poses = torch.from_numpy(np.load(path))
+        # raw_poses = [raw_poses[idx] for idx in range(len(raw_poses)) if idx % 2 != 0]
+        # print("Len raw poses: ", len(raw_poses))
         if self.target=="vis":
-            # raw_poses = raw_poses[[0, -1]] # the first and last frames will be used
-            raw_poses = raw_poses[np.arange(0, len(raw_poses), 8)] # the first and last frames will be used
+            raw_poses = raw_poses[[0, -1]] # the first and last frames will be used
+            # raw_poses = raw_poses[np.arange(0, len(raw_poses), 8)] # the first and last frames will be used
         return raw_poses
 
     def load_img(self, path:str) -> PIL.Image.Image:
@@ -211,7 +213,13 @@ class DatasetRGB(DatasetBase):
 
     def prefetch_all_data(self) -> None:
         self.images = self.preload_threading(self.get_image)
-        all = torch.utils.data._utils.collate.default_collate([s for s in self])
+
+        print("Len self: ", len(self))
+
+        filtered_data = [s for i, s in enumerate(self) if i % 2 != 0]
+        print("filtered self: ", len(filtered_data))
+
+        all = torch.utils.data._utils.collate.default_collate(filtered_data)
         self.all = edict(
             idx=all["idx"],
             pose=util.move_to_device(all["pose"], self.opt.device),

@@ -98,6 +98,11 @@ class ModelWrapper():
             var = m.train_data.all
             var_list.append(var)
 
+        self.timer_start = torch.cuda.Event(enable_timing = True)
+        self.timer_end = torch.cuda.Event(enable_timing = True)
+
+        self.timer_start.record()
+
         for self.it in loader:
             idx = self.it % 4
             # train iteration
@@ -105,6 +110,8 @@ class ModelWrapper():
             opt = opt_list[idx]
             m = self.model_list[idx]
             self.train_iteration(m, opt, var, loader)
+
+        self.timer_end.record()
 
     def train_iteration(self, model, opt: edict[str, Any], var: edict, loader: tqdm.std.tqdm) -> None:
         """
@@ -164,6 +171,8 @@ class ModelWrapper():
             self.tb_writers[idx].flush()
             self.tb_writers[idx].close()
         log.title("PROCESS END")
+
+
 
 class Renderer(torch.nn.Module):
     """

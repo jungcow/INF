@@ -199,13 +199,13 @@ class Model():
                               f"{var_original.idx}_origin",origin_image)
             
             # breakpoint()
-            psnrs.append(psnr(origin_image.cuda(), rgb_map))
-            ssims.append(ssim(origin_image.cuda(), rgb_map))
-            lpipss.append(lpips(origin_image.cuda(), rgb_map))
+            # psnrs.append(psnr(origin_image.cuda(), rgb_map))
+            # ssims.append(ssim(origin_image.cuda(), rgb_map))
+            # lpipss.append(lpips(origin_image.cuda(), rgb_map))
 
-        self.psnr = torch.tensor(psnrs).mean()
-        self.ssim = torch.tensor(ssims).mean()
-        self.lpips = torch.tensor(lpipss).mean()
+        # self.psnr = torch.tensor(psnrs).mean()
+        # self.ssim = torch.tensor(ssims).mean()
+        # self.lpips = torch.tensor(lpipss).mean()
 
 
     @torch.no_grad()
@@ -281,14 +281,18 @@ class Model():
             pose_e = transforms.pose.relative(pose, self.pose.ref_ext)
             euler_e, trans_e = transforms.get_ang_tra(pose_e)
             util_vis.tb_log_ang_tra(super.tb_writers[self.model_idx], "ext_error", None, euler_e, trans_e, super.it//CAM_NUM + 1)
+
+            torch.cuda.synchronize()
+            super.timer_end.record()
             res.update(
                 rotation_error=euler_e, 
                 rotation_norm_error=np.linalg.norm(euler_e),
                 translation_error=trans_e,
                 translation_norm_error = np.linalg.norm(trans_e),
-                PSNR = self.psnr.item(),
-                SSIM = self.ssim.item(),
-                LPIPS=self.lpips.item())
+                elapsed=super.timer_start.elapsed_time(super.timer_end) / 1000.)
+                # PSNR = self.psnr.item(),
+                # SSIM = self.ssim.item(),
+                # LPIPS=self.lpips.item(),
             
         # save in a json file
         with open(os.path.join(opt.output_path,"res.json"), "w") as f:
