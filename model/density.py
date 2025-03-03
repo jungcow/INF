@@ -313,20 +313,22 @@ class Model(base.Model):
         self.renderer.eval()
         
         # if optimizing with all frames, we use the middle frame pose to render
-        id = self.ep if self.status != "all" else len(self.train_data)//2
+        # id = self.ep if self.status != "all" else len(self.train_data)//2
+        ids = [0, 5, 10, 15, 20, 25, 30, 35]
         
-        # get pose
-        if opt.poses:
-            pose = self.pose.get(id)
-        else:
-            pose = self.train_data.poses[id]
-        
-        # render
-        var = self.render_by_slices(opt,pose)
-        
-        # colorize depth and post on tensorboard
-        depth_c = util_vis.to_color_img(opt, var.depth)
-        util_vis.tb_image(opt, self.tb, self.it + 1, self.status, f"{self.ep}", depth_c)
+        for id in tqdm.tqdm(ids):
+            # get pose
+            if opt.poses:
+                pose = self.pose.get(id)
+            else:
+                pose = self.train_data.poses[id]
+            
+            # render
+            var = self.render_by_slices(opt,pose)
+            
+            # colorize depth and post on tensorboard
+            depth_c = util_vis.to_color_img(opt, var.depth)
+            util_vis.tb_image(opt, self.tb, self.it + 1, self.status, f"{self.ep}_{id}", depth_c)
 
 class Renderer(base.Renderer):
     def __init__(self, opt: edict[str, Any]) -> None:

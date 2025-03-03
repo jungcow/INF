@@ -7,7 +7,7 @@ import argparse
 from scipy.spatial.transform import Rotation as R
 import os
 
-def load_camera_matrices(input_path):
+def load_camera_matrices_legacy(input_path):
     """Load camera transformation matrices from a file."""
     camera_matrices = {}
     with open(input_path, 'r') as f:
@@ -25,6 +25,17 @@ def load_camera_matrices(input_path):
                 matrix.append(list(map(float, line.split())))
         if cam_name and matrix:
             camera_matrices[cam_name] = np.array(matrix)
+    return camera_matrices
+
+def load_camera_matrices(input_path):
+    matrices = np.loadtxt(input_path).reshape(-1, 17)
+
+    camera_matrices = {}
+    for mat in matrices:
+        cam_id = mat[0]
+        extr = mat[1:].reshape(4, 4)
+        camera_matrices[f'{cam_id}'] = extr
+
     return camera_matrices
 
 def main():

@@ -28,6 +28,7 @@ class ModelWrapper():
         self.optim_lr = {}
 
         self.model_list = [m.Model(opt, idx) for idx, (opt, m) in enumerate(zip(opt_list, model_list))]
+        print(f"Found {len(model_list)} models!")
 
     def build_network(self, opt_list) -> None:
         """
@@ -104,7 +105,7 @@ class ModelWrapper():
         self.timer_start.record()
 
         for self.it in loader:
-            idx = self.it % 4
+            idx = self.it % len(opt_list)
             # train iteration
             var = var_list[idx]
             opt = opt_list[idx]
@@ -149,13 +150,13 @@ class ModelWrapper():
 
         # --- after training iteration ---
         
-        if (self.it//4)==0 or ((self.it//4) + 1) % opt.freq.val == 0: 
+        if (self.it//len(self.model_list))==0 or ((self.it//len(self.model_list)) + 1) % opt.freq.val == 0: 
             model.validate(self, opt) # in child model
-        if (self.it//4)==0 or ((self.it//4) + 1) % opt.freq.scalar == 0: 
+        if (self.it//len(self.model_list))==0 or ((self.it//len(self.model_list)) + 1) % opt.freq.scalar == 0: 
             model.log_scalars(self, opt, var.idx) # in child model
-        if ((self.it//4) + 1) % opt.freq.ckpt == 0:
+        if ((self.it//len(self.model_list)) + 1) % opt.freq.ckpt == 0:
             model.save_checkpoint(self, opt, status=self.status) # in child model
-        loader.set_postfix(it=(self.it//4),loss=f"{self.loss.all:.3f}")
+        loader.set_postfix(it=(self.it//len(self.model_list)),loss=f"{self.loss.all:.3f}")
         self.timer.it_end = time.time()
         update_timer(opt,self.timer,self.ep,len(loader))
 

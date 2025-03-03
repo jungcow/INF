@@ -112,10 +112,10 @@ class Model():
 
         # --- after training iteration ---
         
-        if self.it==0 or (self.it + 1) % opt.freq.scalar == 0: 
-            self.log_scalars(opt, var.idx)
         if self.it==0 or (self.it + 1) % opt.freq.val == 0: 
             self.validate(opt)
+        if self.it==0 or (self.it + 1) % opt.freq.scalar == 0: 
+            self.log_scalars(opt, var.idx)
         if (self.it + 1) % opt.freq.ckpt == 0:
             self.save_checkpoint(opt, status=self.status)
         loader.set_postfix(it=self.it,loss=f"{self.loss.all:.3f}")

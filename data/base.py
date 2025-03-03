@@ -319,6 +319,7 @@ class Dataset3D(DatasetBase):
 
     def prefetch_all_data(self) -> None:
         self.scans = self.preload_threading(self.get_scan, data_str="lidar scans")
+        # self.scans = self.get_scan(0)
         self.all = edict(idx=list(range(len(self.list))))
         self.collect(self.scans, self.all)
 

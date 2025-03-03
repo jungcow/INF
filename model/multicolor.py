@@ -18,8 +18,6 @@ from torch.autograd import Variable
 from math import exp
 from lpipsPyTorch import lpips
 
-CAM_NUM=4
-
 class Model():
     def __init__(self, opt, model_idx):
         self.model_idx = model_idx
@@ -73,7 +71,7 @@ class Model():
         steps = [m for m, _ in opt.train.multi_scale] # opt.train.multi_scale: [[iter, scale], [iter, scale], ...] -> step:[iter, iter, ...]
         for n, s in enumerate(zip(steps, steps[1:] + [float("inf")])): 
             # [[iter1, iter2], [iter2, iter3], ..., [iter_last, inf]]
-            it = super.it//CAM_NUM
+            it = super.it//len(super.model_list)
             if it >= s[0] and it < s[1]:
                 scale = opt.train.multi_scale[n][1]
                 break
@@ -181,21 +179,21 @@ class Model():
             depth_c = util_vis.to_color_img(opt, var.depth)
             util_vis.tb_image(opt, 
                               super.tb_writers[self.model_idx], 
-                              super.it//CAM_NUM + 1, 
+                              super.it//len(super.model_list) + 1, 
                               "vis", f"{var_original.idx}_depth", depth_c)
-            imageio.imwrite(os.path.join(opt.output_path, "figures", f"{var_original.idx}_depth", f"{super.it//CAM_NUM}.png"), util_vis.to_np_img(depth_c))
+            imageio.imwrite(os.path.join(opt.output_path, "figures", f"{var_original.idx}_depth", f"{super.it//len(super.model_list)}.png"), util_vis.to_np_img(depth_c))
             # rgb image
             rgb_map = var.rgb.view(-1,opt.render_H,opt.render_W,3).permute(0,3,1,2) # [B,3,H,W]
             util_vis.tb_image(opt,
                               super.tb_writers[self.model_idx],
-                              super.it//CAM_NUM+1,
+                              super.it//len(super.model_list)+1,
                               "vis", f"{var_original.idx}_rgb",rgb_map)
-            imageio.imwrite(os.path.join(opt.output_path, "figures", f"{var_original.idx}_rgb", f"{super.it//CAM_NUM}.png"), util_vis.to_np_img(rgb_map))
+            imageio.imwrite(os.path.join(opt.output_path, "figures", f"{var_original.idx}_rgb", f"{super.it//len(super.model_list)}.png"), util_vis.to_np_img(rgb_map))
             # original image
             origin_image = var_original.image.reshape(1, opt.render_H, opt.render_W, 3).permute(0, 3, 1, 2)
             util_vis.tb_image(opt,
                               super.tb_writers[self.model_idx],
-                              super.it//CAM_NUM+1,"vis",
+                              super.it//len(super.model_list)+1,"vis",
                               f"{var_original.idx}_origin",origin_image)
             
             # breakpoint()
@@ -252,15 +250,15 @@ class Model():
         for key, value in super.loss.items():
             super.tb_writers[self.model_idx].add_scalar(f"train/{key}_loss", 
                                                        value, 
-                                                       super.it//CAM_NUM + 1)
+                                                       super.it//len(super.model_list) + 1)
 
         # log learning rate:
         super.field_req and super.tb_writers[self.model_idx].add_scalar(f"train/lr_field", 
                                                                       super.optim_f.param_groups[0]["lr"], 
-                                                                      super.it//CAM_NUM + 1)
+                                                                      super.it//len(super.model_list) + 1)
         super.pose_req and super.tb_writers[self.model_idx].add_scalar(f"train/lr_pose", 
                                                                      self.optim_p.param_groups[0]["lr"],
-                                                                     super.it//CAM_NUM + 1)
+                                                                     super.it//len(super.model_list) + 1)
 
         # log pose
         pose = self.pose.SE3()
@@ -273,14 +271,14 @@ class Model():
         euler, trans = transforms.get_ang_tra(pose)
         util_vis.tb_log_ang_tra(super.tb_writers[self.model_idx], 
                                 "ext", None, euler, trans,
-                                super.it//CAM_NUM + 1)
+                                super.it//len(super.model_list) + 1)
         res = {"rotation": euler, "translation": trans}
         
         # log pose error if there is ground truth pose
         if self.pose.ref_ext is not None:
             pose_e = transforms.pose.relative(pose, self.pose.ref_ext)
             euler_e, trans_e = transforms.get_ang_tra(pose_e)
-            util_vis.tb_log_ang_tra(super.tb_writers[self.model_idx], "ext_error", None, euler_e, trans_e, super.it//CAM_NUM + 1)
+            util_vis.tb_log_ang_tra(super.tb_writers[self.model_idx], "ext_error", None, euler_e, trans_e, super.it//len(super.model_list) + 1)
 
             torch.cuda.synchronize()
             super.timer_end.record()
@@ -311,16 +309,16 @@ class Model():
         """
         checkpoint = dict(
             epoch=super.ep,
-            iter=super.it//CAM_NUM,
+            iter=super.it//len(super.model_list),
             status=status,
             renderer=super.renderer.state_dict(),
         )
         opt.poses and checkpoint.update(pose=self.pose.state_dict())
-        super.it//CAM_NUM>0 and super.field_req and super.sched_f and checkpoint.update(lr_f=super.optim_f.param_groups[0]["lr"])
-        super.it//CAM_NUM>0 and super.pose_req and super.sched_p and checkpoint.update(lr_p=self.optim_p.param_groups[0]["lr"])
+        super.it//len(super.model_list)>0 and super.field_req and super.sched_f and checkpoint.update(lr_f=super.optim_f.param_groups[0]["lr"])
+        super.it//len(super.model_list)>0 and super.pose_req and super.sched_p and checkpoint.update(lr_p=self.optim_p.param_groups[0]["lr"])
 
         torch.save(checkpoint,f"{opt.output_path}/model.ckpt")
-        log.info(f"checkpoint saved: (epoch {super.ep} (iteration {super.it//CAM_NUM})") 
+        log.info(f"checkpoint saved: (epoch {super.ep} (iteration {super.it//len(super.model_list)})") 
 
     def restore_checkpoint(self, super, opt: edict[str, Any]) -> None:
         """

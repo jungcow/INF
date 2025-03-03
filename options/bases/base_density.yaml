@@ -34,3 +34,5 @@ train:                                                      # training options
         depth: 1
         opacity: 0.01
         empty: 1
+
+seed: 0

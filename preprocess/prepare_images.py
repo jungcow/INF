@@ -11,9 +11,15 @@ def main():
     args = parser.parse_args()
 
     # Define the input pattern to search for image files
-    input_pattern = os.path.join(args.input_path, "images", "image_*", "*.png")
+    # input_pattern = os.path.join(args.input_path, "images", "image_*", "*.png")
+    # input_pattern = os.path.join(args.input_path, "images", "image_*", "*.[jp][pn]g") # Waymo
+    input_pattern = os.path.join(args.input_path, "images", "image_*", "*")
+
 
     for file_path in tqdm(glob.glob(input_pattern)):
+        if not file_path.lower().endswith(('.png', '.jpg', '.jpeg')):
+            continue
+
         parts = file_path.split(os.sep)
 
         if len(parts) < 4:

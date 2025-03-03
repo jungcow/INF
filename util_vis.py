@@ -78,6 +78,7 @@ def tb_log_ang_tra(
     tb.add_scalar(f"{split}/rot_norm", np.linalg.norm(euler), iter + 1)
     tb.add_scalar(f"{split}/trans_norm", np.linalg.norm(trans), iter + 1)
 
+# util_vis.tb_image(opt, self.tb, self.it + 1, self.status, f"{self.ep}", depth_c)
 @torch.no_grad()
 def tb_image(opt,tb,step,group,name,images,num_vis=None,from_range=(0,1),cmap="gray"):
     images = preprocess_vis_image(opt,images,from_range=from_range,cmap=cmap)
