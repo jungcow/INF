@@ -1,0 +1,20 @@
+_parent_: options/bases/base_density.yaml
+
+group: kitti-360_large_zigzag
+name: density
+
+render:
+  depth: 60
+  image_size:  [640, 1280]                                 # render image size
+
+data:
+  scene: kitti-360_large_zigzag
+  sensor: HDL64E                                          # sensor to use (insta or ouster)
+  near_far: [0.5, 30] 
+  length: 80
+
+train:
+  range: 120
+  use_weight: True
+  iteration:
+    all: 40000                                          # iterations to use

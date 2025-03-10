@@ -110,17 +110,17 @@ def main():
     args = parser.parse_args()
     
     group = os.path.join('output', args.group)
-    # for i in range(0, args.num_batches + 0):
-    #     copy_density_to_batch(group, i, from_lidar=False)
-    #     run_batch(args, i, from_lidar=False)
-    # aggregate_results(args.group, args.num_batches, from_lidar=False)
-    # print("Batch (GT) processing complete. Results saved to res_batch.json")
+    for i in range(0, args.num_batches + 0):
+        copy_density_to_batch(group, i, from_lidar=False)
+        run_batch(args, i, from_lidar=False)
+    aggregate_results(args.group, args.num_batches, from_lidar=False)
+    print("Batch (GT) processing complete. Results saved to res_batch.json")
 
-    for i in range(args.num_batches):
-        copy_density_to_batch(group, i, from_lidar=True)
-        run_batch(args, i, from_lidar=True)
-    aggregate_results(args.group, args.num_batches, from_lidar=True)
-    print("Batch (from_lidar) processing complete. Results saved to res_batch.json")
+    # for i in range(args.num_batches):
+    #     copy_density_to_batch(group, i, from_lidar=True)
+    #     run_batch(args, i, from_lidar=True)
+    # aggregate_results(args.group, args.num_batches, from_lidar=True)
+    # print("Batch (from_lidar) processing complete. Results saved to res_batch.json")
 
 if __name__ == "__main__":
     main()

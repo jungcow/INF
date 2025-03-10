@@ -1,0 +1,16 @@
+_parent_: options/bases/base_color_waymo.yaml
+
+name: calib_cam4
+density_name: 
+
+render:
+  image_size: [886,1920]
+
+data:
+  image_sub_folder: image_04
+  image_size: [886,1920]
+
+camera: pinhole
+
+extrinsic: [0,0,90,0,0,0]                            # initial values for extrinsic parameters
+intrinsic: [2069.0862338863235, 2069.0862338863235, 977.4400144708829, 237.60501091627225]  # [ fx, fy, cx, cy ]
