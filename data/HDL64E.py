@@ -8,6 +8,12 @@ from scipy.spatial import KDTree
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
+################################################################################
+# For HDL-64E LiDAR: Refering to the manual of HDL-64E, get a lookup table
+# and calculate the weights of points using 8-neighbor comparison
+# (For Kitti-360 dataset)
+################################################################################
+
 class Dataset(Dataset3D):
     """
     Specified for current data that are measured from Ouster
@@ -75,44 +81,6 @@ class Dataset(Dataset3D):
         pc = torch.from_numpy(np.load(file_path)).to(torch.float)
         return pc
     
-    # def cal_weight(self, pointcloud: np.ndarray, filter_: np.ndarray) -> np.ndarray:
-    #     """calculate the weights of the rays
-
-    #     Args:
-    #         pointcloud (np.ndarray): shape (-1, 3), xyz coordinates
-    #         filter_ (np.ndarray): filter that tells the reached points
-
-    #     Returns:
-    #         np.ndarray: weights of the rays
-    #     """
-    #     pcd = o3d.geometry.PointCloud()
-    #     pcd.points = o3d.utility.Vector3dVector(pointcloud[filter_])
-    #     pcd.estimate_normals()
-    #     pcd.normalize_normals()
-    #     nm = np.asarray(pcd.normals)
-
-    #     nms = np.zeros((filter_.shape[0], 3))
-    #     nms[filter_] = nm
-    #     nms = nms.reshape((128, -1, 3))
-    #     nms_padding = np.zeros((nms.shape[0]+2, nms.shape[1]+2, 3))
-    #     nms_padding[1:-1, 1:-1] = nms
-    #     edges = np.stack([
-    #         nms_padding[0:-2, 1:-1]*nms,
-    #         nms_padding[0:-2, 0:-2]*nms,
-    #         nms_padding[1:-1, 2:]*nms,
-    #         nms_padding[1:-1, :-2]*nms,
-    #         nms_padding[2:, 2:]*nms,
-    #         nms_padding[2:, :-2]*nms,
-    #         nms_padding[:-2, 2:]*nms,
-    #         nms_padding[2:, 1:-1]*nms
-    #     ])
-    #     edges = edges.sum(axis=-1).mean(axis=0).reshape(-1)
-    #     e = (1-edges)/2
-    #     e[~filter_] = 0
-    #     weight = e * 0.8 + 0.2 # hard-coded here!
-    #     return weight
-
-
     def cal_weight(self, pointcloud: np.ndarray, filter_: np.ndarray, phi, theta) -> np.ndarray:
         CHANNELS=64
         def create_vcf_lut():
@@ -135,7 +103,7 @@ class Dataset(Dataset3D):
                 (57, -10.4898), (58, -9.9770), (59, -13.5573), (60, -13.0469), (61, -9.4637), (62, -8.9497),
                 (63, -12.5363), (64, -12.0253)
             ]
-            
+
             laser_data.sort(key=lambda x: x[1])
             return np.array(laser_data)
 

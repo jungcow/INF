@@ -22,7 +22,7 @@ extrinsic:
 intrinsic:
 
 train:
-  iteration: 200000                                       # this scene takes longer to converge                                          
+  iteration: 400000                                       # this scene takes longer to converge                                          
   # rot_noise: 5.0 # uniform random sampling on [-rot_noise ~ rot_noise]
   # trans_noise: 0.5 # uniform random sampling on [-trans_noise ~ trans_noise]
 
@@ -30,8 +30,8 @@ seed:
 
 freq:                                                       # periodic actions during training
     scalar: 250                                            # log losses and scalar states (every N iterations)
-    val:  10000                                             # validate on val set (every N epochs)
-    ckpt:  5000                                            # save checkpoint (every N epochs)
+    val:  2000                                             # validate on val set (every N epochs)
+    ckpt: 5000                                            # save checkpoint (every N epochs)
 
 lr:
     pose: 0.01                                             # learning rate for extrinsic parameters

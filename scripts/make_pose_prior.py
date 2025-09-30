@@ -13,12 +13,12 @@ def euler_and_translation_to_matrix(euler_angles, translation):
     extrinsic[:3, 3] = translation
     return extrinsic
 
-def process_test(test_dir, output_filename):
+def process_test(test_dir, output_filename, cam_num):
     # Process each camera folder in the test directory:
     # Read the res.json file, convert the parsed Euler angles and translation into a 4x4 extrinsic matrix,
     # then flatten the matrix and write it to the pose_prior file with the camera ID.
     lines = []
-    for cam_id in range(4):
+    for cam_id in range(cam_num):
         # Search for res.json in folders matching calib_cam{cam_id}_*
         pattern = os.path.join(test_dir, f"calib_cam{cam_id}_*", "res.json")
         res_files = glob.glob(pattern)
@@ -48,7 +48,9 @@ def main():
     parser = argparse.ArgumentParser(description="Generate pose_prior files from res.json files.")
     parser.add_argument("--group", required=True, help="Group name (e.g., groupA)")
     parser.add_argument("--output", default="output", help="Output directory root (default: output)")
+    parser.add_argument("--batch_num", type=int, default=10, help="Number of batches (default: 10)")
     parser.add_argument("--from_lidar", action='store_true', help="from lidar test")
+    parser.add_argument("--cam_num", type=int, required=True, help="Number of cameras (KITTI-360: 4, Waymo: 5)")
     args = parser.parse_args()
 
     # Construct the batch directory path based on the provided group and output arguments
@@ -56,13 +58,13 @@ def main():
     if args.from_lidar:
         batch_dir = batch_dir + '_from_lidar'
     # Iterate over test0 to test9 directories
-    for i in range(10):
+    for i in range(args.batch_num):
         test_dir = os.path.join(batch_dir, f"test{i}")
         if not os.path.exists(test_dir):
             print(f"Test directory {test_dir} does not exist. Skipping...")
             continue
         output_filename = f"pose_prior{i}.txt"
-        process_test(test_dir, output_filename)
+        process_test(test_dir, output_filename, args.cam_num)
 
 if __name__ == "__main__":
     main()

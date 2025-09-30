@@ -38,7 +38,7 @@ def to_color_img(opt: edict, depth: torch.Tensor) -> torch.Tensor:
     """
     depth_c = colorize_depth(depth, opt.render.depth)
     depth_c = depth_c.view(-1, opt.render_H, opt.render_W, 1)
-    return depth_c.permute(3,0,1,2)
+    return depth_c.permute(3,0,1,2) # N, 3, H, W
 
 def to_np_img(image: torch.Tensor) -> np.ndarray:
     """
@@ -90,6 +90,25 @@ def tb_image(opt,tb,step,group,name,images,num_vis=None,from_range=(0,1),cmap="g
         image_grid = torch.cat([image_grid,mask_grid],dim=0)
     tag = "{0}/{1}".format(group,name)
     tb.add_image(tag,image_grid,step)
+
+@torch.no_grad()
+def save_video(opt, depths, filename):
+    """
+    depths: (N,3,H,W) in [0,1]
+    """
+    if depths.shape[1] != 3:
+        raise ValueError(f"depths should have 3 channels: {depths.shape}")
+    if depths.ndim != 4:
+        raise ValueError(f"depths should be 4D tensor: {depths.shape}")
+
+    # save video
+    fps = 5
+    if hasattr(opt.tb, "video_fps"):
+        fps = opt.tb.video_fps
+    print(f"[INFO] saving video to {filename}, fps={fps}")
+    """(N,H,W,3)"""
+    torchvision.io.write_video(filename,(depths.permute(0,2,3,1).cpu().numpy() * 255).astype(np.uint8), fps=fps)
+    print(f"[OK] saved video: {filename}")
 
 def preprocess_vis_image(opt,images,from_range=(0,1),cmap="gray"):
     min,max = from_range

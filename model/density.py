@@ -314,8 +314,9 @@ class Model(base.Model):
         
         # if optimizing with all frames, we use the middle frame pose to render
         # id = self.ep if self.status != "all" else len(self.train_data)//2
-        ids = [0, 5, 10, 15, 20, 25, 30, 35]
-        
+        # ids = [0, 5, 10, 15, 20, 25, 30, 35]
+        ids = np.linspace(0, len(self.train_data)-1, min(21, len(self.train_data)), dtype=int).tolist()
+        depths = []
         for id in tqdm.tqdm(ids):
             # get pose
             if opt.poses:
@@ -328,7 +329,11 @@ class Model(base.Model):
             
             # colorize depth and post on tensorboard
             depth_c = util_vis.to_color_img(opt, var.depth)
+            depths.append(depth_c)
             util_vis.tb_image(opt, self.tb, self.it + 1, self.status, f"{self.ep}_{id}", depth_c)
+
+        # save depth videos
+        util_vis.save_video(opt, torch.cat(depths, dim=0), f"{opt.output_path}/depth_{self.status}_{self.it+1}.mp4")
 
 class Renderer(base.Renderer):
     def __init__(self, opt: edict[str, Any]) -> None:

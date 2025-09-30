@@ -108,6 +108,7 @@ def process_options(opt):
     # use panorama camera model to render
     opt.render_H, opt.render_W = opt.render.image_size
     opt.render_camera = "panorama"
+    # opt.render_camera = "pinhole"
     opt.render_intr = [opt.render_H, opt.render_W]
 
     # whether there are poses to train

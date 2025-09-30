@@ -197,13 +197,13 @@ class Model():
                               f"{var_original.idx}_origin",origin_image)
             
             # breakpoint()
-            # psnrs.append(psnr(origin_image.cuda(), rgb_map))
-            # ssims.append(ssim(origin_image.cuda(), rgb_map))
-            # lpipss.append(lpips(origin_image.cuda(), rgb_map))
+            psnrs.append(psnr(origin_image.cuda(), rgb_map))
+            ssims.append(ssim(origin_image.cuda(), rgb_map))
+            lpipss.append(lpips(origin_image.cuda(), rgb_map))
 
-        # self.psnr = torch.tensor(psnrs).mean()
-        # self.ssim = torch.tensor(ssims).mean()
-        # self.lpips = torch.tensor(lpipss).mean()
+        self.psnr = torch.tensor(psnrs).mean()
+        self.ssim = torch.tensor(ssims).mean()
+        self.lpips = torch.tensor(lpipss).mean()
 
 
     @torch.no_grad()
@@ -280,17 +280,21 @@ class Model():
             euler_e, trans_e = transforms.get_ang_tra(pose_e)
             util_vis.tb_log_ang_tra(super.tb_writers[self.model_idx], "ext_error", None, euler_e, trans_e, super.it//len(super.model_list) + 1)
 
-            torch.cuda.synchronize()
             super.timer_end.record()
+            torch.cuda.synchronize()
             res.update(
                 rotation_error=euler_e, 
                 rotation_norm_error=np.linalg.norm(euler_e),
                 translation_error=trans_e,
-                translation_norm_error = np.linalg.norm(trans_e),
-                elapsed=super.timer_start.elapsed_time(super.timer_end) / 1000.)
-                # PSNR = self.psnr.item(),
-                # SSIM = self.ssim.item(),
-                # LPIPS=self.lpips.item(),
+                translation_norm_error=np.linalg.norm(trans_e),
+                elapsed=super.timer_start.elapsed_time(super.timer_end) / 1000.,
+                PSNR=self.psnr.item(),
+                SSIM=self.ssim.item(),
+                LPIPS=self.lpips.item(),
+                mem_peak_alloc_GB=super.avg_peak_alloc/1e9,
+                mem_peak_resv_GB=super.avg_peak_resv/1e9,
+                iteration=super.it,
+            )
             
         # save in a json file
         with open(os.path.join(opt.output_path,"res.json"), "w") as f:

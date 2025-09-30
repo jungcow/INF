@@ -4,13 +4,13 @@ name: calib_cam0
 density_name: 
 
 render:
-  image_size: [1280,1920]
+  image_size: [640, 960]
 
 data:
   image_sub_folder: image_00
-  image_size: [1280,1920]
+  image_size: [640, 960]
 
-camera: pinhole
+# camera: pinhole
 
 extrinsic: [0,0,0,0,0,0]      #90                              # initial values for extrinsic parameters
-intrinsic: [2063.7423774569, 2063.7423774569, 936.6222395340525, 640.5199106214661]  # [ fx, fy, cx, cy ]
+intrinsic: [1030.0712890625, 1030.0712890625, 487.7982482910156, 315.4266662597656]  # [ fx, fy, cx, cy ]

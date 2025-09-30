@@ -102,9 +102,12 @@ class ModelWrapper():
         self.timer_start = torch.cuda.Event(enable_timing = True)
         self.timer_end = torch.cuda.Event(enable_timing = True)
 
-        self.timer_start.record()
+        self.avg_peak_alloc = 0
+        self.avg_peak_resv = 0
 
+        self.timer_start.record()
         for self.it in loader:
+
             idx = self.it % len(opt_list)
             # train iteration
             var = var_list[idx]
@@ -135,6 +138,11 @@ class ModelWrapper():
         self.field_req and self.optim_f.zero_grad()
         self.pose_req and model.optim_p.zero_grad()
 
+        memory_peak_alloc_total = 0
+        memory_peak_resv_total  = 0
+        memory_usage_count = 0
+        torch.cuda.reset_peak_memory_stats()
+
         # --- train iteration ---
 
         # get rays, render and calculate loss
@@ -149,7 +157,17 @@ class ModelWrapper():
         self.pose_req and self.sched_p and self.sched_p.step() # in wrapper
 
         # --- after training iteration ---
-        
+
+        peak_alloc = torch.cuda.max_memory_allocated(device=opt.device)   # bytes
+        peak_resv  = torch.cuda.max_memory_reserved(device=opt.device)    # bytes
+
+        memory_peak_alloc_total += peak_alloc
+        memory_peak_resv_total  += peak_resv
+        memory_usage_count += 1
+
+        self.avg_peak_alloc = (memory_peak_alloc_total / memory_usage_count) if memory_usage_count else 0
+        self.avg_peak_resv  = (memory_peak_resv_total  / memory_usage_count) if memory_usage_count else 0
+
         if (self.it//len(self.model_list))==0 or ((self.it//len(self.model_list)) + 1) % opt.freq.val == 0: 
             model.validate(self, opt) # in child model
         if (self.it//len(self.model_list))==0 or ((self.it//len(self.model_list)) + 1) % opt.freq.scalar == 0: 
